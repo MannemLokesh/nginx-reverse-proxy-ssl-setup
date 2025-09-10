@@ -186,6 +186,16 @@ If you're running applications on your server (e.g., `localhost:5000` for fronte
 server {
     listen 80;
     server_name example.com;
+    access_log  /var/log/nginx/example.com.access.log;
+    error_log  /var/log/nginx/example.com.error.log;
+
+    proxy_headers_hash_max_size 512;
+    proxy_headers_hash_bucket_size 128;
+	client_max_body_size 50M;
+
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
 
     location / {
         proxy_pass http://localhost:5000;
@@ -194,6 +204,18 @@ server {
         proxy_set_header Connection 'upgrade';
         proxy_set_header Host $host;
         proxy_cache_bypass $http_upgrade;
+
+        # Add these lines:
+        proxy_connect_timeout 600s;
+        proxy_send_timeout    600s;
+        proxy_read_timeout    600s;
+        send_timeout          600s;
+
+        # Add these buffer size settings to fix header issue
+        proxy_buffer_size          16k;
+        proxy_buffers              8 16k;
+        proxy_busy_buffers_size    32k;
+
     }
 
     location /api/ {
